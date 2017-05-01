@@ -1,6 +1,10 @@
 <h3>Daftar Buku</h3>
+<!-- alert untuk sukses menambah data -->
+<div class="alert alert-success" style="display: none;">
+	
+</div>
 <!-- link modal add -->
-<button type="button" id="btnAdd" class="btn btn-success" data-toggle="modal" data-target="#modalAdd">tambah buku</button>
+<button type="button" id="btnAdd" class="btn btn-success" >tambah buku</button>
 <!-- table buat nampilin -->
 <table class="table table-bordered table-responsive" style="margin-top: 20px;">
 	<thead>
@@ -18,7 +22,7 @@
 		
 	</tbody>
 </table>
-<!-- modal add -->
+<!-- modal -->
 <div class="modal fade" id="modalAdd">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
@@ -27,12 +31,16 @@
 					<span aria-hidden="true">&times;</span>
 					<span class="sr-only">Close</span>
 				</button>
-				<h4 class="modal-title">Modal title</h4>
+				<h4 class="modal-title">Modal Title<h4>
 			</div>
 			<div class="modal-body">
-				<form id="bukuForm" method="post" action="">
+				<form id="bukuForm" method="" action="">
+				<!-- inputan dua untuk mengambil nilai edit dan delete, trus satunya add -->
 					<fieldset class="form-group">
 						<input type="hidden" class="form-control" name="kode_buku">
+					</fieldset>
+					<fieldset class="form-group">
+						<input type="hidden" class="form-control" name="id_buku">
 					</fieldset>
 					<fieldset class="form-group">
 						<label for="judul">Judul Buku</label>
@@ -57,8 +65,28 @@
 				</form>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-				<button type="button" id="btnSave" class="btn btn-primary">Save changes</button>
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+				<button type="button" id="btnSave" class="btn btn-primary">Simpan</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<div class="modal fade" id="modalDelete">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+					<span class="sr-only">Close</span>
+				</button>
+				<h4 class="modal-title">Konfirmasi menghapus</h4>
+			</div>
+			<div class="modal-body">
+				<p>Anda yakin untuk menghapus data ini?</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Tidak</button>
+				<button type="button" class="btn btn-danger" id="btnDelete">Ya</button>
 			</div>
 		</div><!-- /.modal-content -->
 	</div><!-- /.modal-dialog -->
@@ -69,13 +97,15 @@
 		//function tambah data
 		//ambil url modal ketika buton modal di klik
 		$('#btnAdd').click(function(){
+			$('#modalAdd').modal('show');
+			$('#modalAdd').find('.modal-title').text('Tambah Buku');
 			$('#bukuForm').attr('action','<?php echo base_url(); ?>admin/bukuAdd');
 		});
 		$('#btnSave').click(function(){
 			var url = $('#bukuForm').attr('action');
 			var data = $('#bukuForm').serialize();
 			//validasi form
-			var kode_buku = $('input[name=kode_buku]');
+			var kode_buku = $('input[name=id_buku]');
 			var judul_buku = $('input[name=judul_buku]');
 			var nama_pengarang = $('input[name=nama_pengarang]');
 			var tahun_terbit = $('input[name=tahun_terbit]');
@@ -126,6 +156,12 @@
 						if(response.success){
 							$('#modalAdd').modal('hide');
 							$('#bukuForm')[0].reset();
+							if(response.type == 'add'){
+								var type = 'menambah'
+							}else if(response.type == 'update'){
+								var type = 'mengupdate'
+							}
+							$('.alert-success').html('Berhasil '+type+' data').fadeIn().delay(1000).fadeOut('slow');
 							showAll();
 						}else{
 							alert('tidak dapat menambah data, coba cek database anda')
@@ -137,7 +173,61 @@
 				});
 			}
 		});
-		//function
+		//function edit data 
+		$('#showData').on('click', '.item-edit', function(){
+			var kode_buku =$(this).attr('data');
+			$('#modalAdd').modal('show');
+			$('#modalAdd').find('.modal-title').text('Edit Data');
+			$('#bukuForm').attr('action','<?php echo base_url() ?>admin/updateBuku');
+			$.ajax({
+				type: 'ajax',
+				method: 'get',
+				data: {kode_buku: kode_buku},
+				url: '<?php echo base_url() ?>admin/editBuku',
+				async: false,
+				dataType: 'json',
+				success: function(data){
+					$('input[name=kode_buku]').val(data.kode_buku);
+					$('input[name=judul_buku]').val(data.judul_buku);
+					$('input[name=nama_pengarang]').val(data.nama_pengarang);
+					$('input[name=tahun_terbit]').val(data.tahun_terbit);
+					$('input[name=penerbit]').val(data.penerbit);
+					$('input[name=stok]').val(data.stok);
+				},
+				error: function(){
+					alert('tidak dapat mengedit data');
+				}
+			});
+		});
+		//function delete
+		$('#showData').on('click', '.item-delete', function(){
+			var kode_buku =$(this).attr('data');
+			$('#modalDelete').modal('show');
+			//prevent previous handler
+			$('#btnDelete').unbind().click(function(){
+				$.ajax({
+					type: 'ajax',
+					method: 'get',
+					async: false,
+					url: '<?php echo base_url(); ?>admin/deleteBuku',
+					data:{kode_buku: kode_buku},
+					dataType: 'json',
+					success: function(response){
+						if(response.success){
+							$('#modalDelete').modal('hide');
+							$('.alert-success').html('Berhasil menghapus data').fadeIn().delay(1000).fadeOut('slow');
+							showAll();
+						}else{
+							alert('Error');
+						}
+					},
+					error: function(){
+						alert('Gagal menghapus');
+					}
+				})
+			});
+		});
+		//function tampil
 		function showAll(){
 			$.ajax({
 				type: 'ajax',
@@ -149,16 +239,16 @@
 					var i;
 					for(i=0; i<data.length; i++){
 						html +='<tr>'+
-							'<td>'+data[i].kode_buku+'</td>'+
-							'<td>'+data[i].judul_buku+'</td>'+
-							'<td>'+data[i].nama_pengarang+'</td>'+
-							'<td>'+data[i].tahun_terbit+'</td>'+
-							'<td>'+data[i].penerbit+'</td>'+
-							'<td>'+data[i].stok+'</td>'+
-							'<td>'+
-								'<a href="javascript:;" class="btn btn-info">Edit</a>'+
-								'<a href="javascript:;" class="btn btn-danger">Delete</a>'+
-							'</td>'+
+						'<td>'+data[i].kode_buku+'</td>'+
+						'<td>'+data[i].judul_buku+'</td>'+
+						'<td>'+data[i].nama_pengarang+'</td>'+
+						'<td>'+data[i].tahun_terbit+'</td>'+
+						'<td>'+data[i].penerbit+'</td>'+
+						'<td>'+data[i].stok+'</td>'+
+						'<td>'+
+						'<a href="javascript:;" class="btn btn-info item-edit" data="'+data[i].kode_buku+'">Edit</a>'+
+						'<a href="javascript:;" class="btn btn-danger item-delete" data="'+data[i].kode_buku+'">Delete</a>'+
+						'</td>'+
 						'</tr>';
 					}
 					$('#showData').html(html);

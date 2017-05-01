@@ -31,6 +31,28 @@ class Admin extends CI_Controller {
 	public function bukuAdd(){
 		$result = $this->model_buku->bukuAdd();
 		$msg['success'] = false;
+		$msg['type'] = 'add';
+		if ($result) {
+			$msg['success'] = true;
+		}
+		echo json_encode($msg);
+	}
+	public function editBuku(){
+		$result = $this->model_buku->editBuku();
+		echo json_encode($result);
+	}
+	public function updateBuku(){
+		$result = $this->model_buku->updateBuku();
+		$msg['success'] = false;
+		$msg['type'] = 'update';
+		if ($result) {
+			$msg['success'] = true;
+		}
+		echo json_encode($msg);
+	}
+	public function deleteBuku(){
+		$result = $this->model_buku->deleteBuku();
+		$msg['success'] = false;
 		if ($result) {
 			$msg['success'] = true;
 		}
